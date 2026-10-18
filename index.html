@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GPS · MENtoreo — Un mensaje de Jota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap">
+<style>
+/* =============================================================
+   MENtoreo · Landing + Registro GPS  (flujo guiado paso a paso)
+   Paleta: Azul Petróleo #0C4650 · Acid Green #E7FF2A · Cool Grey #898A8D
+   Tipografía: Poppins
+   ============================================================= */
+:root{
+  --petrol:#0C4650; --petrol-deep:#092f37; --petrol-2:#0f5966;
+  --acid:#E7FF2A; --acid-ink:#0C4650; --grey:#898A8D;
+  --cloud:#eef2f2; --card:#ffffff; --ink:#1b2a2a; --muted:#4a5a5a;
+  --line:#d8e0e0; --err:#b23b2a;
+  --sans:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --maxw:560px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{
+  font-family:var(--sans); color:var(--ink);
+  background:linear-gradient(170deg,#0a3a42 0%, #0C4650 40%, #0f5966 100%);
+  background-attachment:fixed; line-height:1.6; -webkit-font-smoothing:antialiased;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  padding-block:0;
+}
+img{max-width:100%;display:block;}
+[hidden]{display:none !important;}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding-block:28px 48px;}
+.brandbar{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+.brandbar .logo{height:30px;}
+
+.card{background:var(--card);border-radius:20px;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.28);}
+@media(min-width:480px){ .card{padding:32px 30px;} }
+
+.eyebrow{display:inline-block;color:var(--petrol-2);font-weight:700;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+h1{font-size:26px;line-height:1.18;font-weight:800;color:var(--petrol);margin:0 0 6px;text-wrap:balance;letter-spacing:-.4px;}
+@media(min-width:480px){ h1{font-size:30px;} }
+.sub{color:var(--muted);font-size:15px;margin:0 0 20px;}
+
+.videobox{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--petrol-deep);margin-bottom:22px;border:1px solid var(--line);}
+.videobox iframe,.videobox video{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.videobox .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#cfe0e0;text-align:center;padding:16px;}
+.videobox .ph .play{width:58px;height:58px;border-radius:50%;background:var(--acid);display:flex;align-items:center;justify-content:center;}
+.videobox .ph .play svg{width:22px;height:22px;margin-left:3px;}
+.videobox .ph small{font-size:12px;color:#9fb6b6;}
+
+.lead{font-size:15.5px;color:var(--ink);margin:0 0 10px;}
+.lead strong{color:var(--petrol);}
+.center{text-align:center;}
+
+/* Botones */
+.btns{display:flex;flex-direction:column;gap:12px;margin-top:22px;}
+.btn{font-family:var(--sans);font-size:16px;font-weight:700;border-radius:12px;padding:15px 20px;border:2px solid transparent;cursor:pointer;text-align:center;transition:transform .06s ease, box-shadow .2s ease, background .2s ease;width:100%;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--acid);color:var(--acid-ink);box-shadow:0 8px 20px rgba(231,255,42,.25);}
+.btn-primary:hover{box-shadow:0 10px 26px rgba(231,255,42,.38);}
+.btn-ghost{background:transparent;color:var(--petrol);border-color:var(--line);}
+.btn-ghost:hover{border-color:var(--grey);}
+.btn-mini{font-size:14px;padding:11px 16px;}
+.btn[disabled]{opacity:.55;cursor:not-allowed;}
+
+/* Wizard */
+.wiztop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.stepcount{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--petrol-2);}
+.progress{height:5px;background:var(--cloud);border-radius:99px;overflow:hidden;margin:8px 0 24px;}
+.progress>i{display:block;height:100%;background:var(--acid);width:0;transition:width .35s ease;}
+
+.wizstep{animation:fade .35s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){ .wizstep{animation:none;} }
+.q{font-size:21px;font-weight:700;color:var(--petrol);margin:0 0 4px;line-height:1.25;letter-spacing:-.3px;}
+.qhelp{color:var(--muted);font-size:14px;margin:0 0 18px;}
+
+label.fl{display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin:0 0 5px;}
+.req{color:var(--err);}
+input[type=text],input[type=email],input[type=tel],select{
+  width:100%;font-family:var(--sans);font-size:16px;color:var(--ink);
+  padding:14px 14px;border:1.5px solid var(--line);border-radius:11px;background:#fcfdfd;margin-bottom:6px;transition:border-color .15s ease;
+}
+input:focus,select:focus{outline:none;border-color:var(--petrol-2);box-shadow:0 0 0 3px rgba(15,89,102,.12);}
+.field-err{border-color:var(--err) !important;}
+.msg-err{color:var(--err);font-size:12.5px;margin:4px 0 0;font-weight:600;min-height:1px;}
+
+.tz{background:var(--cloud);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--muted);margin:0 0 14px;}
+.tz b{color:var(--petrol);}
+
+.opt{display:flex;align-items:flex-start;gap:11px;border:1.5px solid var(--line);border-radius:11px;padding:13px 14px;margin-bottom:10px;cursor:pointer;background:#fcfdfd;transition:border-color .15s ease, background .15s ease;}
+.opt:hover{border-color:var(--grey);}
+.opt input{margin:2px 0 0;width:19px;height:19px;flex:0 0 auto;accent-color:var(--petrol);cursor:pointer;}
+.opt .ol{font-size:14.5px;color:var(--ink);}
+.opt .ol .small{display:block;font-size:12.5px;color:var(--muted);font-weight:400;}
+.opt.checked{border-color:var(--petrol-2);background:#f3fbf9;}
+
+.infobox{background:linear-gradient(135deg,var(--petrol) 0%, var(--petrol-2) 100%);color:#eaf4f4;border-radius:13px;padding:16px 17px;margin:0 0 16px;}
+.infobox h4{margin:0 0 6px;color:var(--acid);font-size:14px;font-weight:700;}
+.infobox p{margin:0;font-size:13.5px;color:#d6e6e6;}
+
+.navrow{display:flex;gap:12px;margin-top:24px;}
+.navrow .btn{margin:0;}
+.navrow .back{flex:0 0 auto;width:auto;padding-left:18px;padding-right:18px;}
+.navrow .fwd{flex:1;}
+
+.bigmark{width:66px;height:66px;border-radius:50%;background:var(--acid);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;}
+.bigmark svg{width:30px;height:30px;}
+.dl{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;margin:12px 0 0;text-decoration:none;color:var(--petrol);font-weight:600;font-size:14.5px;transition:border-color .15s ease, background .15s ease;}
+.dl:hover{border-color:var(--petrol-2);background:#f3fbf9;}
+.dl .ic{width:34px;height:34px;flex:0 0 auto;border-radius:9px;background:var(--cloud);display:flex;align-items:center;justify-content:center;}
+.dl .ic svg{width:18px;height:18px;}
+.dl .meta{flex:1;min-width:0;}
+.dl .meta small{display:block;color:var(--muted);font-weight:400;font-size:12px;}
+
+.hr{height:1px;background:var(--line);margin:22px 0;border:0;}
+.footnote{color:#9fb6b6;font-size:12px;text-align:center;margin-top:22px;}
+.footnote b{color:#cfe0e0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brandbar">
+    <img class="logo" src="guia_assets/logo_mentoreo.png" alt="MENtoreo" onerror="this.style.display='none'">
+  </div>
+
+  <!-- ============ PANTALLA 1 · MENSAJE DE JOTA ============ -->
+  <section id="screen-intro" class="card">
+    <span class="eyebrow">Un mensaje importante de Jota</span>
+    <h1>Hay un camino que no deberías caminar solo.</h1>
+    <p class="sub">Tómate cinco minutos para ver esto. Es para ti.</p>
+
+    <div class="videobox" id="videobox">
+      <div class="ph" id="videoph">
+        <div class="play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#0C4650"><path d="M8 5v14l11-7z"/></svg></div>
+        <div>Aquí va el video de Jota</div>
+        <small>Configura CONFIG.VIDEO_EMBED</small>
+      </div>
+    </div>
+
+    <p class="lead">En este proceso, como en cualquier viaje, es fácil perder el rumbo. Un <strong>GPS — Grupo Pequeño de Soporte</strong> es un grupo reducido de hombres que se reúne cada semana, por videollamada, para volver a ubicarse y caminar acompañados.</p>
+    <p class="lead">No es terapia, ni una clase, ni un lugar de consejos. Es un círculo de iguales donde dejas de estar solo.</p>
+
+    <div class="btns">
+      <button class="btn btn-primary" onclick="go('form'); startWizard();">Sí, quiero unirme a un GPS</button>
+      <button class="btn btn-ghost" onclick="go('no')">No, gracias</button>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA · NO ============ -->
+  <section id="screen-no" class="card center" hidden>
+    <div class="bigmark" style="background:var(--cloud)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0C4650" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+    </div>
+    <h1 style="font-size:23px">Gracias por tomarte el tiempo.</h1>
+    <p class="sub" style="margin-bottom:20px">Entendemos. La puerta queda abierta: el día que quieras caminar acompañado, aquí estaremos para recibirte.</p>
+    <div class="btns"><button class="btn btn-ghost btn-mini" onclick="go('intro')">Volver</button></div>
+  </section>
+
+  <!-- ============ PANTALLA 2 · FLUJO GUIADO ============ -->
+  <section id="screen-form" class="card" hidden>
+    <div class="wiztop">
+      <span class="eyebrow" style="margin:0">Registro</span>
+      <span class="stepcount" id="stepcount">Paso 1 de 4</span>
+    </div>
+    <div class="progress"><i id="pbar"></i></div>
+
+    <form id="gpsform" novalidate>
+
+      <!-- Paso 1 de 4 · Tus datos -->
+      <div class="wizstep" data-step>
+        <p class="q">Tus datos</p>
+        <p class="qhelp">Para saludarte y confirmarte por WhatsApp.</p>
+        <label class="fl" for="f-nombre">Nombre completo <span class="req">*</span></label>
+        <input type="text" id="f-nombre" name="nombre" autocomplete="name" placeholder="Tu nombre completo">
+        <div class="msg-err" id="e-nombre" hidden>Escribe tu nombre.</div>
+        <label class="fl" for="f-wa" style="margin-top:14px">WhatsApp (con indicativo del país) <span class="req">*</span></label>
+        <input type="tel" id="f-wa" name="whatsapp" autocomplete="tel" placeholder="+57 300 000 0000">
+        <div class="msg-err" id="e-wa" hidden>Escribe tu número de WhatsApp.</div>
+        <label class="fl" for="f-email" style="margin-top:14px">Correo electrónico</label>
+        <input type="email" id="f-email" name="email" autocomplete="email" placeholder="tucorreo@ejemplo.com (opcional)">
+        <div class="msg-err" id="e-email" hidden>Ese correo no parece válido.</div>
+      </div>
+
+      <!-- Paso 2 de 4 · Ubicación y horario -->
+      <div class="wizstep" data-step hidden>
+        <p class="q">Tu ubicación y horario</p>
+        <p class="qhelp">Para confirmar que el horario de tu grupo te queda bien.</p>
+        <label class="fl" for="f-pais">País <span class="req">*</span></label>
+        <select id="f-pais" name="pais">
+          <option value="">Selecciona…</option>
+          <option>Colombia</option><option>Perú</option><option>Panamá</option>
+          <option>Estados Unidos</option><option>México</option><option>Venezuela</option>
+          <option>Ecuador</option><option>Chile</option><option>Argentina</option>
+          <option value="Otro">Otro</option>
+        </select>
+        <div class="msg-err" id="e-pais" hidden>Selecciona tu país.</div>
+        <label class="fl" for="f-ciudad" style="margin-top:12px">Ciudad <span class="req">*</span></label>
+        <input type="text" id="f-ciudad" name="ciudad" placeholder="Tu ciudad">
+        <div class="msg-err" id="e-ciudad" hidden>Escribe tu ciudad.</div>
+        <div class="tz" id="tzbox" style="margin-top:16px">Detectando tu zona horaria…</div>
+
+        <div id="schedwrap" hidden>
+          <div class="infobox" style="margin-top:4px">
+            <h4>El horario de tu grupo</h4>
+            <p id="schedline">—</p>
+          </div>
+          <p class="qhelp" style="margin-bottom:10px">¿Puedes asistir a este horario?</p>
+          <label class="opt" data-asiste><input type="radio" name="asiste" value="Sí"><span class="ol">Sí, puedo a este horario.</span></label>
+          <label class="opt" data-asiste><input type="radio" name="asiste" value="No"><span class="ol">No puedo ese día y a esa hora.</span></label>
+          <div class="msg-err" id="e-asiste" hidden>Cuéntanos si ese horario te sirve.</div>
+        </div>
+        <div id="noschedwrap" class="tz" hidden>Te asignaremos un grupo y te confirmaremos el horario por WhatsApp.</div>
+      </div>
+
+      <!-- Paso 3 de 4 · Acuerdos -->
+      <div class="wizstep" data-step hidden>
+        <p class="q">Los acuerdos del grupo</p>
+        <p class="qhelp">Un GPS funciona porque todos cuidan el espacio. Para entrar, acepta cada uno:</p>
+        <label class="opt" data-commit><input type="checkbox" name="c_respeto"><span class="ol">Me comprometo a <b>respetar</b> a mis compañeros y lo que cada uno comparte.</span></label>
+        <label class="opt" data-commit><input type="checkbox" name="c_confid"><span class="ol">Me comprometo a <b>guardar confidencialidad</b>: lo que se habla en el grupo, se queda en el grupo.</span></label>
+        <label class="opt" data-commit><input type="checkbox" name="c_yo"><span class="ol">Me comprometo a <b>hablar desde mi propia experiencia</b> y dar espacio a los demás, sin aconsejar ni imponer.</span></label>
+        <label class="opt" data-commit><input type="checkbox" name="c_feedback"><span class="ol">Estoy <b>abierto a recibir</b> el eco y el reflejo que mis compañeros me devuelvan.</span></label>
+        <label class="opt" data-commit><input type="checkbox" name="c_asist"><span class="ol">Me comprometo a <b>asistir cada semana</b> en la medida de lo posible.</span></label>
+        <div class="msg-err" id="e-commit" hidden>Para unirte, necesitas aceptar los cinco acuerdos.</div>
+      </div>
+
+      <!-- Paso 4 de 4 · Facilitador -->
+      <div class="wizstep" data-step hidden>
+        <p class="q">El rol de facilitador</p>
+        <div class="infobox">
+          <h4>¿Qué es facilitar?</h4>
+          <p>Cada semana, un hombre del grupo cuida el espacio: abre la reunión y cuida los turnos. No es un jefe ni el que más sabe — es un rol sencillo que <b>se turna entre todos</b>. La semana que te toca, igual compartes como uno más.</p>
+        </div>
+        <p class="qhelp">¿Estarías dispuesto a facilitar de vez en cuando, cuando te toque el turno?</p>
+        <label class="opt" data-fac><input type="radio" name="facilitador" value="Sí"><span class="ol">Sí, con gusto.</span></label>
+        <label class="opt" data-fac><input type="radio" name="facilitador" value="Tal vez"><span class="ol">Tal vez más adelante.</span></label>
+        <label class="opt" data-fac><input type="radio" name="facilitador" value="Por ahora no"><span class="ol">Por ahora prefiero solo participar.</span></label>
+        <div class="msg-err" id="e-fac" hidden>Cuéntanos tu disposición.</div>
+      </div>
+
+      <!-- Navegación -->
+      <div class="navrow">
+        <button type="button" class="btn btn-ghost back" id="backbtn" onclick="prevStep()">Atrás</button>
+        <button type="button" class="btn btn-primary fwd" id="fwdbtn" onclick="nextStep()">Continuar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ PANTALLA 3 · CONFIRMACIÓN ============ -->
+  <section id="screen-done" class="card center" hidden>
+    <div class="bigmark"><svg viewBox="0 0 24 24" fill="none" stroke="#0C4650" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <h1 id="done-h1" style="font-size:24px">Diste el primer paso.</h1>
+    <p class="sub" id="donename" style="margin-bottom:6px">Tu registro quedó recibido.</p>
+    <p class="lead center" id="done-lead" style="margin-bottom:4px">Te escribiremos por WhatsApp para confirmar tu grupo y tu horario. Mientras tanto, te dejo esto para que llegues sabiendo a qué vienes:</p>
+    <div style="text-align:left;margin-top:16px">
+      <a class="dl" id="dl-gps" href="guia_assets/GPS_Que_es_un_GPS.pdf" download>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#0C4650" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
+        <span class="meta">Qué es un GPS<small>La guía del grupo · PDF</small></span>
+      </a>
+      <a class="dl" id="dl-fac" href="guia_assets/GPS_Guia_del_Facilitador.pdf" download hidden>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#0C4650" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
+        <span class="meta">Guía del Facilitador<small>Por si te toca cuidar el espacio · PDF</small></span>
+      </a>
+    </div>
+    <p class="lead center" id="wa-line" style="font-size:13.5px;color:var(--muted);margin-top:18px"></p>
+    <hr class="hr">
+    <p class="lead center" style="font-size:14px;color:var(--muted);margin:0">Nos vemos en el círculo. No estás solo.</p>
+  </section>
+
+  <div class="footnote">MENtoreo · <b>GPS</b> — Grupos Pequeños de Soporte</div>
+</div>
+
+<script>
+/* =================================================================
+   CONFIGURACIÓN — edita solo este bloque antes de publicar
+   ================================================================= */
+const CONFIG = {
+  VIDEO_EMBED: "https://www.youtube.com/embed/mnQSawCBGnY",  // video de Jota
+  VIDEO_FILE: "",           // alternativa: "guia_assets/jota.mp4"
+  FORM_ENDPOINT: "https://script.google.com/macros/s/AKfycbxTgbbKybCHgNyqyLnuOGG-LV886mbbCqTgyEcw1Zho5Y0Rz3INQ1XjkQcUKvjEKjHaZw/exec",      // URL del Web App de Google Apps Script (vacío = modo demo)
+  WHATSAPP_DISPLAY: "+57 311 420 9105",
+  REF_TZ: "America/Bogota", // zona de referencia de los horarios (hora Colombia)
+  // Cada grupo tiene UN horario fijo. El enlace define a qué grupo se invita:
+  //   index.html?g=asistidos   ?g=autonomos   ?g=en_proceso   ?g=mixto
+  // dow: 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb · hh/mm 24h, hora Colombia.
+  GROUPS: {
+    asistidos:  { nombre:"Asistidos",  dow:1, hh:20, mm:0 },  // Lunes 8:00 p.m.
+    autonomos:  { nombre:"Autónomos",  dow:3, hh:19, mm:0 },  // Miércoles 7:00 p.m.
+    en_proceso: { nombre:"En proceso", dow:3, hh:20, mm:0 },  // Miércoles 8:00 p.m.
+    mixto:      { nombre:"Mixto",      dow:4, hh:20, mm:0 }   // Jueves 8:00 p.m.
+  }
+};
+/* ================================================================= */
+
+/* ---- WhatsApp de contacto en la pantalla final ---- */
+(function(){
+  const num=(CONFIG.WHATSAPP_DISPLAY||'').trim(); if(!num) return;
+  const digits=num.replace(/[^\d]/g,'');
+  const el=document.getElementById('wa-line');
+  if(el) el.innerHTML='¿Tienes dudas? Escríbenos por WhatsApp: <a href="https://wa.me/'+digits+'" target="_blank" rel="noopener" style="color:#0f5966;font-weight:600;text-decoration:none">'+num+'</a>';
+})();
+
+/* ---- Navegación entre pantallas ---- */
+const screens = { intro:'screen-intro', no:'screen-no', form:'screen-form', done:'screen-done' };
+function go(name){
+  Object.values(screens).forEach(id => document.getElementById(id).hidden = true);
+  document.getElementById(screens[name]).hidden = false;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---- Video ---- */
+(function(){
+  const box = document.getElementById('videobox');
+  if(CONFIG.VIDEO_EMBED){
+    box.innerHTML = '<iframe src="'+CONFIG.VIDEO_EMBED+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  } else if(CONFIG.VIDEO_FILE){
+    box.innerHTML = '<video src="'+CONFIG.VIDEO_FILE+'" controls playsinline></video>';
+  }
+})();
+
+/* ---- Zona horaria + bloques ---- */
+const viewerTZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || CONFIG.REF_TZ;
+function nextDateForDow(dow){
+  const d=new Date(); const cur=d.getDay(); let add=(dow-cur+7)%7; if(add===0)add=7;
+  d.setDate(d.getDate()+add); return d;
+}
+function blockLocalString(b){ // Bogotá UTC-5 fijo → instante UTC = hora local + 5h
+  const base=nextDateForDow(b.dow);
+  const utc=new Date(Date.UTC(base.getFullYear(),base.getMonth(),base.getDate(),b.hh+5,b.mm));
+  const fmt=new Intl.DateTimeFormat('es',{weekday:'long',hour:'numeric',minute:'2-digit',hour12:true,timeZone:viewerTZ});
+  let s=fmt.format(utc); return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function refString(b){
+  const dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  let h=b.hh, ap=h>=12?'p.m.':'a.m.'; let h12=h%12; if(h12===0)h12=12;
+  const mm=b.mm===0?'':':'+String(b.mm).padStart(2,'0');
+  return dias[b.dow].charAt(0).toUpperCase()+dias[b.dow].slice(1)+' '+h12+mm+' '+ap;
+}
+const GROUP_KEY = (new URLSearchParams(location.search).get('g')||'').toLowerCase();
+const GROUP = CONFIG.GROUPS[GROUP_KEY] || null;
+function dowHour(g){ // horario en hora Colombia (para el registro)
+  const dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  let h=g.hh, ap=h>=12?'p.m.':'a.m.'; let h12=h%12; if(h12===0)h12=12;
+  const mm=g.mm===0?'':':'+String(g.mm).padStart(2,'0');
+  return dias[g.dow].charAt(0).toUpperCase()+dias[g.dow].slice(1)+' '+h12+mm+' '+ap;
+}
+(function(){
+  document.getElementById('tzbox').innerHTML='Tu zona horaria detectada: <b>'+viewerTZ+'</b>.';
+  if(GROUP){
+    document.getElementById('schedwrap').hidden=false;
+    document.getElementById('schedline').innerHTML=blockLocalString(GROUP)+' <span style="color:#9fc7c7;font-weight:400">(tu hora local)</span>';
+  } else {
+    document.getElementById('noschedwrap').hidden=false;
+  }
+  wireOptVisuals();
+})();
+
+function wireOptVisuals(){
+  document.querySelectorAll('.opt').forEach(opt=>{
+    const input=opt.querySelector('input');
+    const sync=()=>{
+      if(input.type==='radio'){
+        document.querySelectorAll('input[name="'+input.name+'"]').forEach(r=>r.closest('.opt').classList.toggle('checked',r.checked));
+      } else { opt.classList.toggle('checked',input.checked); }
+    };
+    input.addEventListener('change',sync); sync();
+  });
+}
+
+/* ---- Wizard paso a paso ---- */
+const steps = Array.from(document.querySelectorAll('#gpsform [data-step]'));
+const TOTAL = steps.length;
+let cur = 0;
+function startWizard(){ cur=0; renderStep(); }
+function renderStep(){
+  steps.forEach((s,i)=> s.hidden = (i!==cur));
+  document.getElementById('stepcount').textContent = 'Paso '+(cur+1)+' de '+TOTAL;
+  document.getElementById('pbar').style.width = Math.round((cur)/(TOTAL)*100)+'%';
+  document.getElementById('backbtn').textContent = cur===0 ? 'Volver' : 'Atrás';
+  document.getElementById('fwdbtn').textContent = cur===TOTAL-1 ? 'Enviar mi registro' : 'Continuar';
+  const first = steps[cur].querySelector('input,select');
+  if(first && first.type!=='radio' && first.type!=='checkbox'){ setTimeout(()=>first.focus(),60); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function prevStep(){ if(cur===0){ go('intro'); return; } cur--; renderStep(); }
+function nextStep(){
+  if(!validateStep(cur)) return;
+  if(cur===1 && GROUP){
+    const asiste=(form.querySelector('input[name="asiste"]:checked')||{}).value;
+    if(asiste==='No'){ submitForm(true); return; } // lista de espera: no continúa a los acuerdos
+  }
+  if(cur===TOTAL-1){ submitForm(false); return; }
+  cur++; renderStep();
+}
+
+const form=document.getElementById('gpsform');
+function showErr(id,on){const e=document.getElementById(id); if(e)e.hidden=!on;}
+function markField(id,on){const f=document.getElementById(id); if(f)f.classList.toggle('field-err',on);}
+function val(id){return document.getElementById(id).value.trim();}
+
+function validateStep(i){
+  // Pasos: 0 datos · 1 ubicación+horario · 2 acuerdos · 3 facilitador
+  if(i===0){
+    const bn=!val('f-nombre'); showErr('e-nombre',bn); markField('f-nombre',bn);
+    const bw=!val('f-wa'); showErr('e-wa',bw); markField('f-wa',bw);
+    const em=val('f-email'); const be= em!=='' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
+    showErr('e-email',be); markField('f-email',be);
+    return !bn && !bw && !be;
+  }
+  if(i===1){
+    const bp=!val('f-pais'), bc=!val('f-ciudad');
+    showErr('e-pais',bp); markField('f-pais',bp); showErr('e-ciudad',bc); markField('f-ciudad',bc);
+    let ba=false;
+    if(GROUP){ ba=!form.querySelector('input[name="asiste"]:checked'); showErr('e-asiste',ba); }
+    return !bp && !bc && !ba;
+  }
+  if(i===2){ const ok=['c_respeto','c_confid','c_yo','c_feedback','c_asist'].every(n=>form.elements[n].checked); showErr('e-commit',!ok); return ok; }
+  if(i===3){ const ok=!!form.querySelector('input[name="facilitador"]:checked'); showErr('e-fac',!ok); return ok; }
+  return true;
+}
+
+function collect(waitlist){
+  const asiste = GROUP ? ((form.querySelector('input[name="asiste"]:checked')||{}).value||'') : 'Por confirmar';
+  const fac=(form.querySelector('input[name="facilitador"]:checked')||{}).value||'';
+  const d=(v)=> waitlist ? '—' : v;
+  return {
+    fecha:new Date().toISOString(), nombre:val('f-nombre'), whatsapp:val('f-wa'), email:val('f-email'),
+    pais:val('f-pais'), ciudad:val('f-ciudad'), zona_horaria:viewerTZ,
+    grupo: GROUP ? (GROUP.nombre+' ('+GROUP_KEY+')') : 'Por asignar',
+    horario_grupo: GROUP ? dowHour(GROUP)+' (Col)' : 'Por confirmar',
+    asiste_horario: asiste,
+    estado: waitlist ? 'Lista de espera' : 'Registrado',
+    respeto:d('Sí'), confidencialidad:d('Sí'), hablar_desde_yo:d('Sí'), recibir_feedback:d('Sí'), asistencia:d('Sí'),
+    facilitador: waitlist ? '—' : fac
+  };
+}
+
+async function submitForm(waitlist){
+  const btn=document.getElementById('fwdbtn'); btn.disabled=true; btn.textContent='Enviando…';
+  const data=collect(waitlist);
+  try{
+    if(CONFIG.FORM_ENDPOINT){
+      await fetch(CONFIG.FORM_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});
+    } else { console.log('[DEMO] Registro (no se envió, FORM_ENDPOINT vacío):',data); }
+  }catch(err){ console.warn('Envío falló, se continúa:',err); }
+
+  if(!waitlist && (data.facilitador==='Sí' || data.facilitador==='Tal vez')){ document.getElementById('dl-fac').hidden=false; }
+  const first=data.nombre.split(' ')[0];
+  const h1=document.getElementById('done-h1'), dn=document.getElementById('donename'), lead=document.getElementById('done-lead');
+  if(waitlist){
+    h1.textContent='Quedaste apuntado, '+first+'.';
+    dn.textContent='Gracias por querer dar el paso.';
+    lead.textContent='Por ahora el único horario de tu grupo es ese y no te queda. Apenas abramos un grupo con un horario que te sirva, te escribimos por WhatsApp. Mientras tanto, te dejo esto:';
+  } else {
+    h1.textContent='Diste el primer paso.';
+    dn.textContent='Gracias, '+first+'. Tu registro quedó recibido.';
+    lead.textContent='Te escribiremos por WhatsApp para confirmar tu grupo y tu horario. Mientras tanto, te dejo esto para que llegues sabiendo a qué vienes:';
+  }
+  btn.disabled=false; btn.textContent='Enviar mi registro';
+  go('done');
+}
+</script>
+</body>
+</html>
