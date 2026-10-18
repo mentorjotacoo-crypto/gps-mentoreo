@@ -321,7 +321,7 @@ function go(name){
   if(CONFIG.VIDEO_EMBED){
     box.innerHTML = '<iframe src="'+CONFIG.VIDEO_EMBED+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
   } else if(CONFIG.VIDEO_FILE){
-    box.innerHTML = '<video src="'+CONFIG.VIDEO_FILE+'#t=0.1" controls playsinline preload="metadata"></video>';
+    box.innerHTML = '<video src="'+CONFIG.VIDEO_FILE+'" poster="guia_assets/portada_video.jpg" controls playsinline preload="metadata"></video>';
   }
 })();
 
