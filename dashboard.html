@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>GPS · Tablero de registros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --petrol:#0C4650; --petrol-2:#0f5966; --acid:#E7FF2A; --grey:#898A8D;
+  --bg:#eef2f2; --card:#fff; --ink:#14282b; --muted:#3f5154; --line:#d5dfdf;
+  --ok:#1d7a4a; --warn:#9a5b00; --bad:#b23b2a;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Poppins,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+header{background:var(--petrol);color:#fff;padding:18px 16px}
+.hin{max-width:1180px;margin:auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header img{height:30px}
+header h1{font-size:22px;margin:0;font-weight:700}
+header .sub{color:#cfe0e0;font-size:15px}
+header .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:15px;color:#cfe0e0}
+button{font:inherit;cursor:pointer;border-radius:10px;border:0;padding:9px 16px;font-weight:600}
+.btn-acid{background:var(--acid);color:var(--petrol)}
+main{max-width:1180px;margin:auto;padding:20px 16px 48px}
+h2{font-size:19px;margin:30px 0 12px;color:var(--petrol)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--card);border-radius:14px;padding:16px 18px;border:1px solid var(--line)}
+.kpi .n{font-size:34px;font-weight:800;color:var(--petrol);line-height:1.1}
+.kpi .l{color:var(--muted);font-size:15px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.g{background:var(--card);border-radius:14px;padding:16px 18px;border:1px solid var(--line);border-top:5px solid var(--petrol)}
+.g h3{margin:0;font-size:18px}
+.g .when{color:var(--muted);font-size:15px;margin-bottom:10px}
+.g .big{font-size:30px;font-weight:800;color:var(--petrol)}
+.g .of{color:var(--muted);font-size:15px}
+.meter{height:12px;background:#e3eaea;border-radius:99px;overflow:hidden;margin:8px 0 10px}
+.meter>i{display:block;height:100%;background:var(--petrol);border-radius:99px}
+.g dl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:0;font-size:15px}
+.g dt{color:var(--muted)} .g dd{margin:0;font-weight:600;text-align:right}
+.chip{display:inline-block;font-size:14px;font-weight:700;padding:3px 10px;border-radius:99px;margin-top:10px}
+.c-ok{background:#dcf2e5;color:var(--ok)} .c-warn{background:#fdecd0;color:var(--warn)} .c-bad{background:#f8dcd7;color:var(--bad)} .c-info{background:#dde9eb;color:var(--petrol)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.row2{grid-template-columns:1fr}}
+.panel{background:var(--card);border-radius:14px;padding:16px 18px;border:1px solid var(--line)}
+.bars .b{display:grid;grid-template-columns:118px 1fr 34px;gap:10px;align-items:center;font-size:15px;margin:6px 0}
+.bars .track{height:14px;background:#e3eaea;border-radius:99px;overflow:hidden}
+.bars .track i{display:block;height:100%;background:var(--petrol-2);border-radius:99px}
+.bars .v{text-align:right;font-weight:600}
+.alert{background:#fff7e0;border:1px solid #f0d58a;border-radius:12px;padding:12px 16px;font-size:15px;margin-top:14px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+select,input{font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.tablewrap{overflow-x:auto;background:var(--card);border-radius:14px;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:820px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f4f7f7;color:var(--muted);font-weight:600;font-size:14px;white-space:nowrap}
+td a{color:var(--petrol);font-weight:600}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.muted{color:var(--muted);font-size:14px}
+#gate{max-width:420px;margin:60px auto;background:#fff;border-radius:14px;padding:24px;border:1px solid var(--line)}
+#gate input{width:100%;margin:10px 0}
+</style>
+</head>
+<body>
+<header><div class="hin">
+  <img src="guia_assets/logo_mentoreo.png" alt="MENtoreo">
+  <div><h1>GPS · Tablero de registros</h1><div class="sub">Grupos Pequeños de Soporte · piloto</div></div>
+  <div class="right"><span id="upd">Cargando…</span><button class="btn-acid" onclick="load()">Actualizar</button></div>
+</div></header>
+
+<div id="gate" hidden>
+  <b>Clave de acceso</b>
+  <p class="muted">Pega la clave del tablero. Queda guardada en este navegador.</p>
+  <input id="keyin" type="password" autocomplete="off">
+  <button class="btn-acid" onclick="setKey()">Entrar</button>
+  <p id="gerr" class="muted" style="color:var(--bad)"></p>
+</div>
+
+<main id="app" hidden>
+  <div class="kpis" id="kpis"></div>
+  <div id="alerts"></div>
+
+  <h2>Cómo va cada grupo</h2>
+  <p class="muted" style="margin-top:-6px">Meta del piloto: 4 a 6 hombres por grupo y al menos un facilitador para la primera reunión.</p>
+  <div class="groups" id="groups"></div>
+
+  <div class="row2">
+    <div><h2>Registros por día</h2><div class="panel bars" id="days"></div></div>
+    <div><h2>Desde dónde se conectan</h2><div class="panel bars" id="countries"></div></div>
+  </div>
+
+  <h2>Personas registradas</h2>
+  <div class="filters">
+    <select id="fg" onchange="renderTable()"><option value="">Todos los grupos</option></select>
+    <select id="fe" onchange="renderTable()"><option value="">Todos los estados</option><option>Registrado</option><option>Lista de espera</option></select>
+    <select id="ff" onchange="renderTable()"><option value="">Facilitador: todos</option><option>Sí</option><option>Tal vez</option><option>Por ahora no</option></select>
+    <input id="fq" placeholder="Buscar nombre o ciudad" oninput="renderTable()">
+  </div>
+  <div class="tablewrap"><table><thead><tr>
+    <th>Fecha</th><th>Nombre</th><th>WhatsApp</th><th>Grupo</th><th>Estado</th><th>Facilitador</th><th>País / ciudad</th><th>Correo</th>
+  </tr></thead><tbody id="tb"></tbody></table></div>
+  <p class="muted" id="foot"></p>
+</main>
+
+<script>
+const ENDPOINT="https://script.google.com/macros/s/AKfycbxTgbbKybCHgNyqyLnuOGG-LV886mbbCqTgyEcw1Zho5Y0Rz3INQ1XjkQcUKvjEKjHaZw/exec";
+const GROUPS=[
+  {key:"asistidos", nombre:"Asistidos", when:"Lunes 8:00 p.m."},
+  {key:"autonomos", nombre:"Autónomos", when:"Miércoles 7:00 p.m."},
+  {key:"en_proceso",nombre:"No ascendidos", when:"Miércoles 8:00 p.m."},
+  {key:"mixto",     nombre:"Mixto", when:"Jueves 8:00 p.m."}
+];
+const META_MIN=4, META_MAX=6;
+let ROWS=[];
+
+function getKey(){
+  const h=new URLSearchParams(location.hash.slice(1)).get('k');
+  if(h){ try{localStorage.setItem('gps_dash_key',h)}catch(e){} history.replaceState(null,'',location.pathname); return h; }
+  try{return localStorage.getItem('gps_dash_key')||''}catch(e){return ''}
+}
+function setKey(){ const k=document.getElementById('keyin').value.trim(); try{localStorage.setItem('gps_dash_key',k)}catch(e){} KEY=k; load(); }
+let KEY=getKey();
+
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const groupKey=r=>{const m=(r.grupo||'').match(/\(([^)]+)\)/);return m?m[1]:'';};
+const digits=s=>String(s||'').replace(/\D/g,'');
+
+async function load(){
+  if(!KEY){ document.getElementById('gate').hidden=false; document.getElementById('upd').textContent=''; return; }
+  document.getElementById('upd').textContent='Cargando…';
+  try{
+    const r=await fetch(ENDPOINT+'?key='+encodeURIComponent(KEY));
+    const t=await r.text(); let d; try{d=JSON.parse(t)}catch(e){d=null}
+    if(!d||!d.ok){ document.getElementById('gate').hidden=false; document.getElementById('app').hidden=true;
+      document.getElementById('gerr').textContent='La clave no es válida o el script todavía no tiene la versión del tablero.'; document.getElementById('upd').textContent=''; return; }
+    document.getElementById('gate').hidden=true; document.getElementById('app').hidden=false;
+    // Sin pruebas; si alguien se registró dos veces, cuenta su último registro
+    const clean=d.rows.filter(r=>r.nombre && !/prueba/i.test(r.nombre) && !/prueba/i.test(r.estado||''));
+    clean.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+    const byPhone=new Map(); clean.forEach(r=>byPhone.set(digits(r.whatsapp)||r.nombre,r));
+    ROWS=[...byPhone.values()].reverse();
+    ROWS._dupes=clean.length-ROWS.length; ROWS._tests=d.rows.length-clean.length;
+    render();
+    document.getElementById('upd').textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'});
+  }catch(e){ document.getElementById('upd').textContent='No se pudo cargar: '+e.message; }
+}
+
+function render(){
+  const reg=ROWS.filter(r=>r.estado==='Registrado'), wait=ROWS.filter(r=>r.estado==='Lista de espera');
+  const facYes=reg.filter(r=>r.facilitador==='Sí').length, facMaybe=reg.filter(r=>r.facilitador==='Tal vez').length;
+  const paises=new Set(ROWS.map(r=>r.pais).filter(Boolean)).size;
+  document.getElementById('kpis').innerHTML=[
+    [reg.length,'Hombres registrados'],[wait.length,'En lista de espera'],
+    [facYes,'Dispuestos a facilitar'+(facMaybe?` (+${facMaybe} tal vez)`:'')],[paises,'Países']
+  ].map(([n,l])=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+
+  const sin=reg.filter(r=>!groupKey(r));
+  document.getElementById('alerts').innerHTML = sin.length
+    ? `<div class="alert"><b>${sin.length} sin grupo:</b> entraron por el enlace sin <code>?g=</code>. Hay que asignarlos a mano: ${sin.map(r=>esc(r.nombre)).join(', ')}.</div>` : '';
+
+  document.getElementById('groups').innerHTML=GROUPS.map(g=>{
+    const rs=reg.filter(r=>groupKey(r)===g.key), ws=wait.filter(r=>groupKey(r)===g.key);
+    const fy=rs.filter(r=>r.facilitador==='Sí').length, fm=rs.filter(r=>r.facilitador==='Tal vez').length;
+    const n=rs.length, pct=Math.min(100,n/META_MAX*100);
+    let chip;
+    if(n>META_MAX) chip=`<span class="chip c-info">${n-META_MAX} de más: pensar en un 2º grupo</span>`;
+    else if(n>=META_MIN && fy>0) chip='<span class="chip c-ok">Listo para arrancar</span>';
+    else if(n>=META_MIN) chip='<span class="chip c-warn">Falta un facilitador</span>';
+    else chip=`<span class="chip c-bad">Faltan ${META_MIN-n} para el mínimo</span>`;
+    return `<div class="g"><h3>${g.nombre}</h3><div class="when">${g.when} · hora Colombia</div>
+      <span class="big">${n}</span> <span class="of">de ${META_MIN}–${META_MAX}</span>
+      <div class="meter"><i style="width:${pct}%"></i></div>
+      <dl><dt>Facilitan</dt><dd>${fy}${fm?` <span class="muted">+${fm} tal vez</span>`:''}</dd>
+      <dt>Lista de espera</dt><dd>${ws.length}</dd></dl>${chip}</div>`;
+  }).join('');
+
+  const byDay={}; ROWS.forEach(r=>{const d=new Date(r.fecha); if(isNaN(d))return;
+    const k=d.toLocaleDateString('es-CO',{timeZone:'America/Bogota',weekday:'short',day:'numeric',month:'short'}); byDay[k]=(byDay[k]||0)+1;});
+  const days=Object.entries(byDay).reverse();
+  bars('days',days,'Todavía no hay registros.');
+  const byC={}; ROWS.forEach(r=>{const k=r.pais||'—'; byC[k]=(byC[k]||0)+1;});
+  bars('countries',Object.entries(byC).sort((a,b)=>b[1]-a[1]),'Todavía no hay registros.');
+
+  const fg=document.getElementById('fg'); if(fg.options.length===1){
+    GROUPS.forEach(g=>fg.add(new Option(g.nombre,g.key))); fg.add(new Option('Sin grupo','__none'));
+  }
+  renderTable();
+  const notes=[]; if(ROWS._tests) notes.push(`${ROWS._tests} filas de prueba ocultas`); if(ROWS._dupes) notes.push(`${ROWS._dupes} registros repetidos (mismo WhatsApp) se cuentan una vez, con el más reciente`);
+  document.getElementById('foot').textContent=notes.join(' · ');
+}
+
+function bars(id,entries,empty){
+  const max=Math.max(1,...entries.map(e=>e[1]));
+  document.getElementById(id).innerHTML=entries.length?entries.map(([k,v])=>
+    `<div class="b"><span>${esc(k)}</span><span class="track"><i style="width:${v/max*100}%"></i></span><span class="v">${v}</span></div>`).join(''):`<div class="empty">${empty}</div>`;
+}
+
+function renderTable(){
+  const g=document.getElementById('fg').value, e=document.getElementById('fe').value, f=document.getElementById('ff').value, q=document.getElementById('fq').value.toLowerCase();
+  const rs=ROWS.filter(r=>(!g||(g==='__none'?!groupKey(r):groupKey(r)===g))&&(!e||r.estado===e)&&(!f||r.facilitador===f)
+    &&(!q||(r.nombre+' '+r.ciudad).toLowerCase().includes(q)));
+  const gname=k=>(GROUPS.find(x=>x.key===k)||{}).nombre||'Sin grupo';
+  document.getElementById('tb').innerHTML=rs.length?rs.map(r=>{
+    const d=new Date(r.fecha), wa=digits(r.whatsapp);
+    const chip=r.estado==='Lista de espera'?'c-warn':'c-ok';
+    return `<tr><td>${isNaN(d)?esc(r.fecha):d.toLocaleString('es-CO',{timeZone:'America/Bogota',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</td>
+      <td><b>${esc(r.nombre)}</b></td>
+      <td>${wa?`<a href="https://wa.me/${wa}" target="_blank" rel="noopener">${esc(r.whatsapp)}</a>`:''}</td>
+      <td>${esc(gname(groupKey(r)))}</td>
+      <td><span class="chip ${chip}" style="margin:0">${esc(r.estado)}</span></td>
+      <td>${esc(r.facilitador)}</td>
+      <td>${esc(r.pais)}${r.ciudad?' · '+esc(r.ciudad):''}</td>
+      <td>${esc(r.email)}</td></tr>`;}).join(''):`<tr><td colspan="8" class="empty">Nadie con esos filtros.</td></tr>`;
+}
+
+load(); setInterval(()=>{ if(!document.hidden && KEY) load(); },120000);
+</script>
+</body>
+</html>
