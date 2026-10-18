@@ -79,6 +79,18 @@ h1{font-size:26px;line-height:1.18;font-weight:800;color:var(--petrol);margin:0 
 .wizstep{animation:fade .35s ease;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion: reduce){ .wizstep{animation:none;} }
+/* ---- Ajustes móvil y contenedor GHL ---- */
+html,body{background:#0C4650 !important;}
+/* GHL envuelve el código en sección/fila/columna con relleno: lo quitamos */
+.fullSection,.c-section,.c-row,.c-column,.inner,.c-custom-code,.custom-code-container{padding:0 !important;margin:0 !important;max-width:none !important;}
+@media(max-width:479px){
+  body{padding-left:10px;padding-right:10px;}
+  .wrap{padding-block:16px 32px;}
+  .brandbar{margin-bottom:14px;}
+  .brandbar .logo{height:26px;}
+  .card{padding:22px 16px;border-radius:16px;}
+}
+
 .q{font-size:21px;font-weight:700;color:var(--petrol);margin:0 0 4px;line-height:1.25;letter-spacing:-.3px;}
 .qhelp{color:var(--muted);font-size:14px;margin:0 0 18px;}
 
