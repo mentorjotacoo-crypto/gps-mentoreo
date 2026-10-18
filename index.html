@@ -34,7 +34,9 @@ body{
 img{max-width:100%;display:block;}
 [hidden]{display:none !important;}
 
-.wrap{max-width:var(--maxw);margin:0 auto;padding-block:28px 48px;}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-block:28px 48px;min-height:100vh;
+  /* fondo de marca a todo el ancho aunque el contenedor (GHL) sea blanco */
+  background:#0C4650;box-shadow:0 0 0 100vmax #0C4650;clip-path:inset(0 -100vmax);}
 .brandbar{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
 .brandbar .logo{height:30px;}
 
