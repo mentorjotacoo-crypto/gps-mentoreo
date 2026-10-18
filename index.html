@@ -282,8 +282,8 @@ input:focus,select:focus{outline:none;border-color:var(--petrol-2);box-shadow:0 
    CONFIGURACIÓN — edita solo este bloque antes de publicar
    ================================================================= */
 const CONFIG = {
-  VIDEO_EMBED: "https://www.youtube.com/embed/mnQSawCBGnY",  // video de Jota
-  VIDEO_FILE: "",           // alternativa: "guia_assets/jota.mp4"
+  VIDEO_EMBED: "",          // YouTube/Vimeo embed (vacío = usa VIDEO_FILE)
+  VIDEO_FILE: "https://assets.cdn.filesafe.space/PyRxC6rGXiJ5QpkaFBqs/media/6ad4ed10989628c77a5f630a.mp4",  // video de Jota (GHL)
   FORM_ENDPOINT: "https://script.google.com/macros/s/AKfycbxTgbbKybCHgNyqyLnuOGG-LV886mbbCqTgyEcw1Zho5Y0Rz3INQ1XjkQcUKvjEKjHaZw/exec",      // URL del Web App de Google Apps Script (vacío = modo demo)
   WHATSAPP_DISPLAY: "+57 311 420 9105",
   REF_TZ: "America/Bogota", // zona de referencia de los horarios (hora Colombia)
@@ -321,7 +321,7 @@ function go(name){
   if(CONFIG.VIDEO_EMBED){
     box.innerHTML = '<iframe src="'+CONFIG.VIDEO_EMBED+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
   } else if(CONFIG.VIDEO_FILE){
-    box.innerHTML = '<video src="'+CONFIG.VIDEO_FILE+'" controls playsinline></video>';
+    box.innerHTML = '<video src="'+CONFIG.VIDEO_FILE+'#t=0.1" controls playsinline preload="metadata"></video>';
   }
 })();
 
