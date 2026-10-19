@@ -296,6 +296,11 @@ input:focus,select:focus{outline:none;border-color:var(--petrol-2);box-shadow:0 
    CONFIGURACIÓN — edita solo este bloque antes de publicar
    ================================================================= */
 const CONFIG = {
+  // CUPOS CERRADOS — interruptor de esta ronda (19-oct-2026).
+  // La invitación llegó a más gente de la prevista y el grupo de Asistidos juntó
+  // 20 inscritos cuando un GPS es de 4 a 6. En true: se muestra el aviso y no se
+  // puede registrar. Para reabrir, poner false (y re-pegar el HTML en GHL).
+  CUPOS_CERRADOS: true,
   VIDEO_EMBED: "",          // YouTube/Vimeo embed (vacío = usa VIDEO_FILE)
   VIDEO_FILE: "https://assets.cdn.filesafe.space/PyRxC6rGXiJ5QpkaFBqs/media/6ad4ed10989628c77a5f630a.mp4",  // video de Jota (GHL)
   FORM_ENDPOINT: "https://script.google.com/macros/s/AKfycbxTgbbKybCHgNyqyLnuOGG-LV886mbbCqTgyEcw1Zho5Y0Rz3INQ1XjkQcUKvjEKjHaZw/exec",      // URL del Web App de Google Apps Script (vacío = modo demo)
@@ -312,6 +317,44 @@ const CONFIG = {
   }
 };
 /* ================================================================= */
+
+/* ---- CUPOS CERRADOS ----------------------------------------------
+   Un letrero no basta: si el botón sigue vivo la gente se sigue
+   registrando. Así que el aviso reemplaza los botones y deja una sola
+   salida, escribir por WhatsApp, para no dejar a nadie sin respuesta. */
+(function(){
+  if(!CONFIG.CUPOS_CERRADOS) return;
+  document.addEventListener('DOMContentLoaded', function(){
+    var intro = document.getElementById('screen-intro');
+    if(!intro) return;
+    var btns = intro.querySelector('.btns');
+    var wa = String(CONFIG.WHATSAPP_DISPLAY||'').replace(/\D/g,'');
+    var aviso = document.createElement('div');
+    aviso.id = 'aviso-cerrado';
+    aviso.setAttribute('role','status');
+    aviso.style.cssText = 'margin:18px 0 4px;padding:16px 18px;border-radius:14px;'+
+      'background:#E7FF2A;color:#0C4650;border:1px solid rgba(12,70,80,.18);';
+    aviso.innerHTML =
+      '<div style="font-weight:700;font-size:17px;margin-bottom:6px">Los cupos de esta ronda ya están completos</div>'+
+      '<div style="font-size:15px;line-height:1.55">Si ya te registraste, tu lugar está guardado y te escribimos con los detalles de tu grupo.<br>'+
+      'Si llegaste ahora, escríbenos y te avisamos apenas abramos la siguiente ronda.</div>';
+    if(btns){
+      btns.parentNode.insertBefore(aviso, btns);
+      btns.innerHTML = '<a class="btn btn-primary" href="https://wa.me/'+wa+
+        '?text='+encodeURIComponent('Hola, vi la invitación a los GPS y quiero entrar en la siguiente ronda.')+
+        '" target="_blank" rel="noopener">Avísenme de la próxima ronda</a>';
+    } else {
+      intro.appendChild(aviso);
+    }
+    // Red de seguridad por si alguien llega al formulario por otra vía. Se
+    // envuelve ACÁ y no antes: si se hace al cargar, `go` todavía no existe y
+    // la función quedaría anulada para TODAS las pantallas, no solo el form.
+    if (typeof window.go === 'function') {
+      var _go = window.go;
+      window.go = function(p){ if(p === 'form') return; return _go.apply(this, arguments); };
+    }
+  });
+})();
 
 /* ---- WhatsApp de contacto en la pantalla final ---- */
 (function(){
