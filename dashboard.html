@@ -83,7 +83,7 @@ td a{color:var(--petrol);font-weight:600}
   <div id="alerts"></div>
 
   <h2>Cómo va cada grupo</h2>
-  <p class="muted" style="margin-top:-6px">Meta del piloto: 4 a 6 hombres por grupo y al menos un facilitador para la primera reunión.</p>
+  <p class="muted" style="margin-top:-6px">Meta del piloto: mínimo 7 hombres por grupo y al menos un facilitador para la primera reunión.</p>
   <div class="groups" id="groups"></div>
 
   <div class="row2">
@@ -112,7 +112,7 @@ const GROUPS=[
   {key:"en_proceso",nombre:"No ascendidos", when:"Miércoles 8:00 p.m."},
   {key:"mixto",     nombre:"Mixto", when:"Jueves 8:00 p.m."}
 ];
-const META_MIN=4, META_MAX=6;
+const META_MIN=7;  // mínimo de hombres por grupo
 let ROWS=[];
 
 function getKey(){
@@ -163,14 +163,13 @@ function render(){
   document.getElementById('groups').innerHTML=GROUPS.map(g=>{
     const rs=reg.filter(r=>groupKey(r)===g.key), ws=wait.filter(r=>groupKey(r)===g.key);
     const fy=rs.filter(r=>r.facilitador==='Sí').length, fm=rs.filter(r=>r.facilitador==='Tal vez').length;
-    const n=rs.length, pct=Math.min(100,n/META_MAX*100);
+    const n=rs.length, pct=Math.min(100,n/META_MIN*100);
     let chip;
-    if(n>META_MAX) chip=`<span class="chip c-info">${n-META_MAX} de más: pensar en un 2º grupo</span>`;
-    else if(n>=META_MIN && fy>0) chip='<span class="chip c-ok">Listo para arrancar</span>';
+    if(n>=META_MIN && fy>0) chip='<span class="chip c-ok">Listo para arrancar</span>';
     else if(n>=META_MIN) chip='<span class="chip c-warn">Falta un facilitador</span>';
-    else chip=`<span class="chip c-bad">Faltan ${META_MIN-n} para el mínimo</span>`;
+    else chip=`<span class="chip c-bad">${META_MIN-n===1?'Falta 1':'Faltan '+(META_MIN-n)} para el mínimo</span>`;
     return `<div class="g"><h3>${g.nombre}</h3><div class="when">${g.when} · hora Colombia</div>
-      <span class="big">${n}</span> <span class="of">de ${META_MIN}–${META_MAX}</span>
+      <span class="big">${n}</span> <span class="of">mínimo ${META_MIN}</span>
       <div class="meter"><i style="width:${pct}%"></i></div>
       <dl><dt>Facilitan</dt><dd>${fy}${fm?` <span class="muted">+${fm} tal vez</span>`:''}</dd>
       <dt>Lista de espera</dt><dd>${ws.length}</dd></dl>${chip}</div>`;
