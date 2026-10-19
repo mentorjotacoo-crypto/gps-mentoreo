@@ -296,11 +296,13 @@ input:focus,select:focus{outline:none;border-color:var(--petrol-2);box-shadow:0 
    CONFIGURACIÓN — edita solo este bloque antes de publicar
    ================================================================= */
 const CONFIG = {
-  // CUPOS CERRADOS — interruptor de esta ronda (19-oct-2026).
-  // La invitación llegó a más gente de la prevista y el grupo de Asistidos juntó
-  // 20 inscritos cuando un GPS es de 4 a 6. En true: se muestra el aviso y no se
-  // puede registrar. Para reabrir, poner false (y re-pegar el HTML en GHL).
-  CUPOS_CERRADOS: true,
+  // CUPOS CERRADOS — por grupo (19-oct-2026).
+  // Asistidos juntó 20 inscritos en un día y un GPS es de 4 a 6, así que ese
+  // grupo se cierra. Los demás siguen recibiendo registros con normalidad.
+  // Se cierra o se reabre agregando o quitando la clave del grupo de esta lista
+  // (asistidos · autonomos · en_proceso · mixto). Tras cambiarla, re-pegar el
+  // HTML en GHL, que es la página que ve la gente.
+  CUPOS_CERRADOS: ['asistidos'],
   VIDEO_EMBED: "",          // YouTube/Vimeo embed (vacío = usa VIDEO_FILE)
   VIDEO_FILE: "https://assets.cdn.filesafe.space/PyRxC6rGXiJ5QpkaFBqs/media/6ad4ed10989628c77a5f630a.mp4",  // video de Jota (GHL)
   FORM_ENDPOINT: "https://script.google.com/macros/s/AKfycbxTgbbKybCHgNyqyLnuOGG-LV886mbbCqTgyEcw1Zho5Y0Rz3INQ1XjkQcUKvjEKjHaZw/exec",      // URL del Web App de Google Apps Script (vacío = modo demo)
@@ -323,8 +325,14 @@ const CONFIG = {
    registrando. Así que el aviso reemplaza los botones y deja una sola
    salida, escribir por WhatsApp, para no dejar a nadie sin respuesta. */
 (function(){
-  if(!CONFIG.CUPOS_CERRADOS) return;
+  var cerrados = CONFIG.CUPOS_CERRADOS;
+  // Admite true (todos) o una lista de grupos. Hoy es solo ['asistidos'].
+  if(!cerrados || (Array.isArray(cerrados) && !cerrados.length)) return;
   document.addEventListener('DOMContentLoaded', function(){
+    // El grupo se lee acá mismo del enlace: este bloque corre antes de que el
+    // resto del script defina GROUP_KEY, así que no se puede depender de él.
+    var g = (new URLSearchParams(location.search).get('g')||'').toLowerCase();
+    if(Array.isArray(cerrados) && cerrados.indexOf(g) === -1) return;  // este grupo sigue abierto
     var intro = document.getElementById('screen-intro');
     if(!intro) return;
     var btns = intro.querySelector('.btns');
