@@ -231,6 +231,14 @@ input:focus,select:focus{outline:none;border-color:var(--petrol-2);box-shadow:0 
           <div class="msg-err" id="e-asiste" hidden>Cuéntanos si ese horario te sirve.</div>
         </div>
         <div id="noschedwrap" class="tz" hidden>Te asignaremos un grupo y te confirmaremos el horario por WhatsApp.</div>
+        <div id="prefwrap" hidden>
+          <div class="infobox" style="margin-top:4px">
+            <h4>¿Qué horarios te quedan bien?</h4>
+            <p>Marca todos los que puedas. Con esto armamos los grupos y te confirmamos el tuyo por WhatsApp.</p>
+          </div>
+          <div id="prefopts"></div>
+          <div class="msg-err" id="e-pref" hidden>Marca al menos un horario.</div>
+        </div>
       </div>
 
       <!-- Paso 3 de 4 · Acuerdos -->
@@ -315,7 +323,13 @@ const CONFIG = {
     asistidos:  { nombre:"Asistidos",  dow:1, hh:20, mm:0 },  // Lunes 8:00 p.m.
     autonomos:  { nombre:"Autónomos",  dow:3, hh:20, mm:0 },  // Miércoles 8:00 p.m. — UNIDO con En proceso (21-oct)
     en_proceso: { nombre:"En proceso", dow:3, hh:20, mm:0 },  // Miércoles 8:00 p.m.
-    mixto:      { nombre:"Mixto",      dow:4, hh:20, mm:0 }   // Jueves 8:00 p.m.
+    mixto:      { nombre:"Mixto",      dow:4, hh:20, mm:0 },  // Jueves 8:00 p.m.
+    // Sesión Estratégica (3-nov-2026): sin horario fijo. Cada uno marca los
+    // horarios que le sirven y con eso se arman varios grupos. Tope de 50:
+    // el Apps Script lo hace cumplir y la página lo muestra.
+    sesion:     { nombre:"Sesión Estratégica", cupo:50,
+                  opciones:[ {dow:1,hh:20,mm:0}, {dow:2,hh:20,mm:0}, {dow:3,hh:20,mm:0},
+                             {dow:4,hh:20,mm:0}, {dow:5,hh:20,mm:0} ] }
   }
 };
 /* ================================================================= */
@@ -333,6 +347,13 @@ const CONFIG = {
     // resto del script defina GROUP_KEY, así que no se puede depender de él.
     var g = (new URLSearchParams(location.search).get('g')||'').toLowerCase();
     if(Array.isArray(cerrados) && cerrados.indexOf(g) === -1) return;  // este grupo sigue abierto
+    cerrarRegistro();
+  });
+})();
+// También la usa el tope de cupos (grupos con `cupo`), cuando se llena.
+function cerrarRegistro(){
+  (function(){
+    if(document.getElementById('aviso-cerrado')) return;
     var intro = document.getElementById('screen-intro');
     if(!intro) return;
     var btns = intro.querySelector('.btns');
@@ -361,8 +382,8 @@ const CONFIG = {
       var _go = window.go;
       window.go = function(p){ if(p === 'form') return; return _go.apply(this, arguments); };
     }
-  });
-})();
+  })();
+}
 
 /* ---- WhatsApp de contacto en la pantalla final ---- */
 (function(){
@@ -410,6 +431,30 @@ function refString(b){
 }
 const GROUP_KEY = (new URLSearchParams(location.search).get('g')||'').toLowerCase();
 const GROUP = CONFIG.GROUPS[GROUP_KEY] || null;
+const FIJO = !!(GROUP && GROUP.dow != null);  // grupo con un solo horario fijo
+
+/* ---- Tope de cupos (grupos con `cupo`) ----
+   El Apps Script cuenta los registros y rechaza los que pasen del tope. Acá
+   solo se muestra cuántos quedan y se cierra la página si ya no hay. Si el
+   conteo no responde, la página sigue abierta y decide el servidor. */
+(function(){
+  if(!GROUP || !GROUP.cupo || !CONFIG.FORM_ENDPOINT) return;
+  fetch(CONFIG.FORM_ENDPOINT+'?cupo='+encodeURIComponent(GROUP_KEY))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d || typeof d.usados !== 'number') return;
+      var quedan = Math.max(0, (d.max || GROUP.cupo) - d.usados);
+      if(quedan <= 0){ cerrarRegistro(); return; }
+      var btns = document.querySelector('#screen-intro .btns');
+      if(btns && !document.getElementById('cupos-quedan')){
+        var p = document.createElement('p');
+        p.id = 'cupos-quedan';
+        p.style.cssText = 'margin:14px 0 0;font-weight:700;font-size:16px;text-align:center';
+        p.textContent = quedan === 1 ? 'Queda 1 cupo.' : 'Quedan '+quedan+' cupos.';
+        btns.parentNode.insertBefore(p, btns);
+      }
+    }).catch(function(){});
+})();
 function dowHour(g){ // horario en hora Colombia (para el registro)
   const dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   let h=g.hh, ap=h>=12?'p.m.':'a.m.'; let h12=h%12; if(h12===0)h12=12;
@@ -418,9 +463,15 @@ function dowHour(g){ // horario en hora Colombia (para el registro)
 }
 (function(){
   document.getElementById('tzbox').innerHTML='Tu zona horaria detectada: <b>'+viewerTZ+'</b>.';
-  if(GROUP){
+  if(FIJO){
     document.getElementById('schedwrap').hidden=false;
     document.getElementById('schedline').innerHTML=blockLocalString(GROUP)+' <span style="color:#9fc7c7;font-weight:400">(tu hora local)</span>';
+  } else if(GROUP && GROUP.opciones){
+    document.getElementById('prefwrap').hidden=false;
+    document.getElementById('prefopts').innerHTML=GROUP.opciones.map(function(o,i){
+      var col = viewerTZ==='America/Bogota' ? '' : ' <span style="opacity:.75">· '+refString(o)+' en Colombia</span>';
+      return '<label class="opt"><input type="checkbox" name="pref" value="'+refString(o)+'"><span class="ol">'+blockLocalString(o)+col+'</span></label>';
+    }).join('');
   } else {
     document.getElementById('noschedwrap').hidden=false;
   }
@@ -457,7 +508,7 @@ function renderStep(){
 function prevStep(){ if(cur===0){ go('intro'); return; } cur--; renderStep(); }
 function nextStep(){
   if(!validateStep(cur)) return;
-  if(cur===1 && GROUP){
+  if(cur===1 && FIJO){
     const asiste=(form.querySelector('input[name="asiste"]:checked')||{}).value;
     if(asiste==='No'){ submitForm(true); return; } // lista de espera: no continúa a los acuerdos
   }
@@ -483,7 +534,8 @@ function validateStep(i){
     const bp=!val('f-pais'), bc=!val('f-ciudad');
     showErr('e-pais',bp); markField('f-pais',bp); showErr('e-ciudad',bc); markField('f-ciudad',bc);
     let ba=false;
-    if(GROUP){ ba=!form.querySelector('input[name="asiste"]:checked'); showErr('e-asiste',ba); }
+    if(FIJO){ ba=!form.querySelector('input[name="asiste"]:checked'); showErr('e-asiste',ba); }
+    else if(GROUP && GROUP.opciones){ ba=!form.querySelector('input[name="pref"]:checked'); showErr('e-pref',ba); }
     return !bp && !bc && !ba;
   }
   if(i===2){ const ok=['c_respeto','c_confid','c_yo','c_feedback','c_asist'].every(n=>form.elements[n].checked); showErr('e-commit',!ok); return ok; }
@@ -492,14 +544,15 @@ function validateStep(i){
 }
 
 function collect(waitlist){
-  const asiste = GROUP ? ((form.querySelector('input[name="asiste"]:checked')||{}).value||'') : 'Por confirmar';
+  const asiste = FIJO ? ((form.querySelector('input[name="asiste"]:checked')||{}).value||'') : 'Por confirmar';
+  const prefs = Array.from(form.querySelectorAll('input[name="pref"]:checked')).map(x=>x.value);
   const fac=(form.querySelector('input[name="facilitador"]:checked')||{}).value||'';
   const d=(v)=> waitlist ? '—' : v;
   return {
     fecha:new Date().toISOString(), nombre:val('f-nombre'), whatsapp:val('f-wa'), email:val('f-email'),
     pais:val('f-pais'), ciudad:val('f-ciudad'), zona_horaria:viewerTZ,
     grupo: GROUP ? (GROUP.nombre+' ('+GROUP_KEY+')') : 'Por asignar',
-    horario_grupo: GROUP ? dowHour(GROUP)+' (Col)' : 'Por confirmar',
+    horario_grupo: FIJO ? dowHour(GROUP)+' (Col)' : (prefs.length ? 'Le sirve: '+prefs.join(', ')+' (Col)' : 'Por confirmar'),
     asiste_horario: asiste,
     estado: waitlist ? 'Lista de espera' : 'Registrado',
     respeto:d('Sí'), confidencialidad:d('Sí'), hablar_desde_yo:d('Sí'), recibir_feedback:d('Sí'), asistencia:d('Sí'),
@@ -510,11 +563,23 @@ function collect(waitlist){
 async function submitForm(waitlist){
   const btn=document.getElementById('fwdbtn'); btn.disabled=true; btn.textContent='Enviando…';
   const data=collect(waitlist);
+  let lleno=false;
   try{
-    if(CONFIG.FORM_ENDPOINT){
+    if(CONFIG.FORM_ENDPOINT && GROUP && GROUP.cupo){
+      // Con tope hay que leer la respuesta para saber si alcanzó cupo. Sin
+      // reintento: el POST ya salió aunque falle la lectura, y repetirlo
+      // duplicaría el registro.
+      const r=await fetch(CONFIG.FORM_ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});
+      try{ const j=await r.json(); lleno=!!(j && j.lleno); }catch(e){}
+    } else if(CONFIG.FORM_ENDPOINT){
       await fetch(CONFIG.FORM_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});
     } else { console.log('[DEMO] Registro (no se envió, FORM_ENDPOINT vacío):',data); }
   }catch(err){ console.warn('Envío falló, se continúa:',err); }
+  if(lleno){
+    btn.disabled=false; btn.textContent='Enviar mi registro';
+    go('intro'); cerrarRegistro();
+    return;
+  }
 
   if(!waitlist && (data.facilitador==='Sí' || data.facilitador==='Tal vez')){ document.getElementById('dl-fac').hidden=false; }
   const first=data.nombre.split(' ')[0];
