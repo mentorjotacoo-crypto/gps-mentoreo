@@ -324,12 +324,11 @@ const CONFIG = {
     autonomos:  { nombre:"Autónomos",  dow:3, hh:20, mm:0 },  // Miércoles 8:00 p.m. — UNIDO con En proceso (21-oct)
     en_proceso: { nombre:"En proceso", dow:3, hh:20, mm:0 },  // Miércoles 8:00 p.m.
     mixto:      { nombre:"Mixto",      dow:4, hh:20, mm:0 },  // Jueves 8:00 p.m.
-    // Sesión Estratégica (3-nov-2026): sin horario fijo. Cada uno marca los
-    // horarios que le sirven y con eso se arman varios grupos. Tope de 50:
-    // el Apps Script lo hace cumplir y la página lo muestra.
-    sesion:     { nombre:"Sesión Estratégica", cupo:50,
-                  opciones:[ {dow:1,hh:20,mm:0}, {dow:2,hh:20,mm:0}, {dow:3,hh:20,mm:0},
-                             {dow:4,hh:20,mm:0}, {dow:5,hh:20,mm:0} ] }
+    // Sesión Estratégica (3-nov-2026): sin horario fijo; el grupo y su horario
+    // se confirman por WhatsApp. Tope de 50: el Apps Script lo hace cumplir y
+    // la página lo muestra. (Para preguntar horarios preferidos, agregar
+    // opciones:[{dow,hh,mm},…]; Juan pidió quitarlo el 3-nov.)
+    sesion:     { nombre:"Sesión Estratégica", cupo:50 }
   }
 };
 /* ================================================================= */
