@@ -239,6 +239,15 @@ input:focus,select:focus{outline:none;border-color:var(--petrol-2);box-shadow:0 
           <div id="prefopts"></div>
           <div class="msg-err" id="e-pref" hidden>Marca al menos un horario.</div>
         </div>
+        <div id="turnowrap" hidden>
+          <div class="infobox" style="margin-top:4px">
+            <h4>Elige el horario de tu grupo</h4>
+            <p>Cada grupo tiene pocos cupos. Los horarios que ya se llenaron no aparecen.</p>
+          </div>
+          <div class="msg-err" id="e-turnolleno" hidden>Ese horario se acaba de llenar. Elige otro, por favor.</div>
+          <div id="turnoopts"><div class="tz">Cargando los cupos disponibles…</div></div>
+          <div class="msg-err" id="e-turno" hidden>Elige un horario.</div>
+        </div>
       </div>
 
       <!-- Paso 3 de 4 · Acuerdos -->
@@ -328,7 +337,16 @@ const CONFIG = {
     // se confirman por WhatsApp. Tope de 50: el Apps Script lo hace cumplir y
     // la página lo muestra. (Para preguntar horarios preferidos, agregar
     // opciones:[{dow,hh,mm},…]; Juan pidió quitarlo el 3-nov.)
-    sesion:     { nombre:"Sesión Estratégica", cupo:50 }
+    sesion:     { nombre:"Sesión Estratégica", cupo:50 },
+    // Grupos nuevos (4-nov-2026): cada uno elige su horario; cada turno tiene
+    // cupo propio y, cuando se llena, desaparece de la lista. El Apps Script
+    // hace cumplir el tope (CUPOS) con las mismas claves.
+    nuevos:     { nombre:"GPS nuevos", turnos:[
+      { clave:"n_lun", nombre:"Lunes",     dow:1, hh:20, mm:0, cupo:9 },
+      { clave:"n_mie", nombre:"Miércoles", dow:3, hh:20, mm:0, cupo:9 },
+      { clave:"n_jue", nombre:"Jueves",    dow:4, hh:20, mm:0, cupo:9 },
+      { clave:"n_sab", nombre:"Sábado",    dow:6, hh:10, mm:0, cupo:9 }
+    ]}
   }
 };
 /* ================================================================= */
@@ -431,6 +449,7 @@ function refString(b){
 const GROUP_KEY = (new URLSearchParams(location.search).get('g')||'').toLowerCase();
 const GROUP = CONFIG.GROUPS[GROUP_KEY] || null;
 const FIJO = !!(GROUP && GROUP.dow != null);  // grupo con un solo horario fijo
+const TURNOS = (GROUP && GROUP.turnos) || null;  // grupo donde cada uno elige turno con cupo
 
 /* ---- Tope de cupos (grupos con `cupo`) ----
    El Apps Script cuenta los registros y rechaza los que pasen del tope. Acá
@@ -471,11 +490,59 @@ function dowHour(g){ // horario en hora Colombia (para el registro)
       var col = viewerTZ==='America/Bogota' ? '' : ' <span style="opacity:.75">· '+refString(o)+' en Colombia</span>';
       return '<label class="opt"><input type="checkbox" name="pref" value="'+refString(o)+'"><span class="ol">'+blockLocalString(o)+col+'</span></label>';
     }).join('');
+  } else if(TURNOS){
+    document.getElementById('turnowrap').hidden=false;
   } else {
     document.getElementById('noschedwrap').hidden=false;
   }
   wireOptVisuals();
 })();
+
+/* ---- Turnos con cupo (grupo `turnos`) ----
+   Se pide al Apps Script cuánto queda en cada turno. Los llenos no se
+   muestran; si se llenan todos, se cierra el registro. Si el conteo no
+   responde se muestran todos y decide el servidor al enviar. */
+function turnoPorClave(k){ return (TURNOS||[]).find(t=>t.clave===k) || null; }
+function pintarTurnos(cupos){
+  const box=document.getElementById('turnoopts');
+  const libres=TURNOS.map(t=>{
+    const c=cupos && cupos[t.clave];
+    const quedan=c ? Math.max(0,(c.max||t.cupo)-c.usados) : null;
+    return {t:t, quedan:quedan};
+  }).filter(x=>x.quedan===null || x.quedan>0);
+  const total=libres.reduce((s,x)=>s+(x.quedan||0),0);
+  if(cupos && !libres.length){ cerrarRegistro(); go('intro'); return; }
+  box.innerHTML=libres.map(x=>{
+    const col = viewerTZ==='America/Bogota' ? '' : ' <span style="opacity:.75">· '+refString(x.t)+' en Colombia</span>';
+    const q = x.quedan===null ? '' : '<span class="small">'+(x.quedan===1?'Queda 1 cupo':'Quedan '+x.quedan+' cupos')+'</span>';
+    return '<label class="opt"><input type="radio" name="turno" value="'+x.t.clave+'"><span class="ol"><b>'+blockLocalString(x.t)+'</b>'+col+q+'</span></label>';
+  }).join('')+
+  '<label class="opt"><input type="radio" name="turno" value="ninguno"><span class="ol">Ninguno de estos horarios me sirve.</span></label>';
+  box.querySelectorAll('.opt').forEach(opt=>{
+    const input=opt.querySelector('input');
+    input.addEventListener('change',()=>box.querySelectorAll('.opt').forEach(o=>o.classList.toggle('checked',o.querySelector('input').checked)));
+  });
+  const p=document.getElementById('cupos-quedan');
+  if(p && cupos) p.textContent = total===1 ? 'Queda 1 cupo.' : 'Quedan '+total+' cupos.';
+}
+function cargarTurnos(){
+  if(!TURNOS) return Promise.resolve();
+  if(!CONFIG.FORM_ENDPOINT){ pintarTurnos(null); return Promise.resolve(); }
+  return fetch(CONFIG.FORM_ENDPOINT+'?cupo='+TURNOS.map(t=>t.clave).join(','))
+    .then(r=>r.json())
+    .then(d=>{
+      if(!d || !d.cupos){ pintarTurnos(null); return; }
+      const btns=document.querySelector('#screen-intro .btns');
+      if(btns && !document.getElementById('cupos-quedan') && !document.getElementById('aviso-cerrado')){
+        const p=document.createElement('p'); p.id='cupos-quedan';
+        p.style.cssText='margin:14px 0 0;font-weight:700;font-size:16px;text-align:center';
+        btns.parentNode.insertBefore(p,btns);
+      }
+      pintarTurnos(d.cupos);
+    })
+    .catch(()=>pintarTurnos(null));
+}
+cargarTurnos();
 
 function wireOptVisuals(){
   document.querySelectorAll('.opt').forEach(opt=>{
@@ -511,6 +578,11 @@ function nextStep(){
     const asiste=(form.querySelector('input[name="asiste"]:checked')||{}).value;
     if(asiste==='No'){ submitForm(true); return; } // lista de espera: no continúa a los acuerdos
   }
+  if(cur===1 && TURNOS){
+    const t=(form.querySelector('input[name="turno"]:checked')||{}).value;
+    if(t==='ninguno'){ submitForm(true); return; }
+  }
+  if(cur===1) showErr('e-turnolleno',false);
   if(cur===TOTAL-1){ submitForm(false); return; }
   cur++; renderStep();
 }
@@ -535,6 +607,7 @@ function validateStep(i){
     let ba=false;
     if(FIJO){ ba=!form.querySelector('input[name="asiste"]:checked'); showErr('e-asiste',ba); }
     else if(GROUP && GROUP.opciones){ ba=!form.querySelector('input[name="pref"]:checked'); showErr('e-pref',ba); }
+    else if(TURNOS){ ba=!form.querySelector('input[name="turno"]:checked'); showErr('e-turno',ba); }
     return !bp && !bc && !ba;
   }
   if(i===2){ const ok=['c_respeto','c_confid','c_yo','c_feedback','c_asist'].every(n=>form.elements[n].checked); showErr('e-commit',!ok); return ok; }
@@ -547,12 +620,14 @@ function collect(waitlist){
   const prefs = Array.from(form.querySelectorAll('input[name="pref"]:checked')).map(x=>x.value);
   const fac=(form.querySelector('input[name="facilitador"]:checked')||{}).value||'';
   const d=(v)=> waitlist ? '—' : v;
+  const turno = TURNOS ? turnoPorClave((form.querySelector('input[name="turno"]:checked')||{}).value) : null;
   return {
     fecha:new Date().toISOString(), nombre:val('f-nombre'), whatsapp:val('f-wa'), email:val('f-email'),
     pais:val('f-pais'), ciudad:val('f-ciudad'), zona_horaria:viewerTZ,
-    grupo: GROUP ? (GROUP.nombre+' ('+GROUP_KEY+')') : 'Por asignar',
-    horario_grupo: FIJO ? dowHour(GROUP)+' (Col)' : (prefs.length ? 'Le sirve: '+prefs.join(', ')+' (Col)' : 'Por confirmar'),
-    asiste_horario: asiste,
+    // La clave entre paréntesis es la que el Apps Script usa para el cupo.
+    grupo: turno ? ('GPS '+turno.nombre+' ('+turno.clave+')') : GROUP ? (GROUP.nombre+' ('+GROUP_KEY+')') : 'Por asignar',
+    horario_grupo: turno ? dowHour(turno)+' (Col)' : TURNOS ? 'Ninguno le sirve' : FIJO ? dowHour(GROUP)+' (Col)' : (prefs.length ? 'Le sirve: '+prefs.join(', ')+' (Col)' : 'Por confirmar'),
+    asiste_horario: turno ? 'Sí' : TURNOS ? 'No' : asiste,
     estado: waitlist ? 'Lista de espera' : 'Registrado',
     respeto:d('Sí'), confidencialidad:d('Sí'), hablar_desde_yo:d('Sí'), recibir_feedback:d('Sí'), asistencia:d('Sí'),
     facilitador: waitlist ? '—' : fac
@@ -564,7 +639,7 @@ async function submitForm(waitlist){
   const data=collect(waitlist);
   let lleno=false;
   try{
-    if(CONFIG.FORM_ENDPOINT && GROUP && GROUP.cupo){
+    if(CONFIG.FORM_ENDPOINT && GROUP && (GROUP.cupo || (TURNOS && !waitlist))){
       // Con tope hay que leer la respuesta para saber si alcanzó cupo. Sin
       // reintento: el POST ya salió aunque falle la lectura, y repetirlo
       // duplicaría el registro.
@@ -574,6 +649,14 @@ async function submitForm(waitlist){
       await fetch(CONFIG.FORM_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});
     } else { console.log('[DEMO] Registro (no se envió, FORM_ENDPOINT vacío):',data); }
   }catch(err){ console.warn('Envío falló, se continúa:',err); }
+  if(lleno && TURNOS){
+    // Se llenó el turno elegido mientras llenaba el formulario: vuelve a
+    // elegir entre los que quedan (si no queda ninguno, cargarTurnos cierra).
+    btn.disabled=false;
+    cur=1; renderStep(); showErr('e-turnolleno',true);
+    cargarTurnos();
+    return;
+  }
   if(lleno){
     btn.disabled=false; btn.textContent='Enviar mi registro';
     go('intro'); cerrarRegistro();
@@ -586,7 +669,14 @@ async function submitForm(waitlist){
   if(waitlist){
     h1.textContent='Quedaste apuntado, '+first+'.';
     dn.textContent='Gracias por querer dar el paso.';
-    lead.textContent='Por ahora el único horario de tu grupo es ese y no te queda. Apenas abramos un grupo con un horario que te sirva, te escribimos por WhatsApp. Mientras tanto, te dejo esto:';
+    lead.textContent= TURNOS
+      ? 'Por ahora ninguno de los horarios te queda. Apenas abramos un grupo con un horario que te sirva, te escribimos por WhatsApp. Mientras tanto, te dejo esto:'
+      : 'Por ahora el único horario de tu grupo es ese y no te queda. Apenas abramos un grupo con un horario que te sirva, te escribimos por WhatsApp. Mientras tanto, te dejo esto:';
+  } else if(data.horario_grupo && TURNOS){
+    h1.textContent='Diste el primer paso.';
+    dn.textContent='Gracias, '+first+'. Tu lugar quedó guardado.';
+    const t=turnoPorClave((form.querySelector('input[name="turno"]:checked')||{}).value);
+    lead.textContent='Tu grupo: '+(t ? blockLocalString(t)+' (tu hora local)' : data.horario_grupo)+'. Te escribiremos por WhatsApp con el enlace de la reunión. Mientras tanto, te dejo esto para que llegues sabiendo a qué vienes:';
   } else {
     h1.textContent='Diste el primer paso.';
     dn.textContent='Gracias, '+first+'. Tu registro quedó recibido.';
